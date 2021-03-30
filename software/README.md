@@ -26,38 +26,61 @@ The following procedure will install all the necessary TART software on a Raspbe
 ### Step 1. Prepare the Pi
 
 Install docker on the raspberry pi. This is done by following commands.
-
+    sudo apt install python3-pip libffi-dev python3-cffi gcc libssl-dev python3-dev
+    
     curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
-    sudo groupadd docker
-    sudo gpasswd -a $USER docker
-    newgrp docker
-    sudo pip install docker-compose
+    sudo usermod -aG docker $USER
+    sudo pip3 install docker-compose
+    sudo reboot
+    
+Debian Buster:
 
-### Step 1. Copy code to the Pi
+    sudo apt install docker.io docker-compose
+    sudo usermod -aG docker $USER
+    sudo reboot
+    
+
+### Step 2. Copy code to the Pi
 
 This step assumes that the raspberry pi is accessible as the host name 'tart2-dev.local' on your local network.
 
-    TARGET=pi@tart2-dev
+    TARGET=pi@tart2-dev.local
+    (cd ../software/containers/telescope_web_api && sh pre_build.sh);
+    rsync -rv --exclude=node_modules ../software ${TARGET}:.
+    
+There is a script, /scripts/install_pi.sh, which performs this task.
 
-    rsync -rv software ${TARGET}:.
-    rsync -rv hardware ${TARGET}:.
-
-### Step 2. Build on the Pi
+### Step 3. Build on the Pi
 
 SSH into the raspberry pi after completing step 1.
 
     cd software
     docker-compose build
+This last step can take ages (around 1 hour or so)
 
 This will build all the necessary sofware on the Pi. To run all the software an services. Type
 
+    docker-compose up
+
+This will launch all the necessary processes in docker containers on the pi.
+
+### Step 4.
+
+To make the system start automatically at startup (and run in the background) modify the line in step 3 to
+
     docker-compose up -d
+
 
 ### Testing
 
 Point your browser to the raspberry pi (http://tart2-dev.local). You should see the telescope web interface. 
 
-Further software installation information cab be found in [software/README.md](software/README.md).
+On a different computer, you should be able to download data from the command line using the web api.
+
+    sudo pip3 install tart_tools
+    tart_download_data --api http://tart2-dev.local --pw <passwd> --raw 
+    
+This should download some HDF files to your local machine. These can be checked using the HDFCompass programme (apt install hdf-compass)
 
 
 #### Documentation Server
